@@ -1,0 +1,21 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(54, 54, 54);
+    height: 100vh;
+    width: 100vw;
+}
+
+canvas {
+    background-color: #f0f0f0;
+}
