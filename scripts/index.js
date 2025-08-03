@@ -12,7 +12,7 @@ class ball {
         this.radius = 15; // arbitrary, could be changed
         this.mass = this.radius;
         this.dx = Math.cos(angle) * 6; // velocities
-        this.dy = Math.sin(angle) * 6;
+        this.dy = Math.sin(angle) * 9.8;
     }
 
     // this function should be called inside render
@@ -46,7 +46,7 @@ canvas.addEventListener("click", (e)=> {
     balls.push(new ball(rad, e.offsetX, e.offsetY));
 });
 
-canvas.addEventListener("dblclick", (e) => {
+document.addEventListener("wheel", () => {
     rad += 0.1;
 });
 
@@ -59,6 +59,8 @@ function render() {
         if(!hitBorders(ball)) {ball.move();}
         ball.draw();
     }); 
+
+    angleMeter.innerHTML = rad;
 }
 
 render();

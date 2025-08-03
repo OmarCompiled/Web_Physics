@@ -19,3 +19,7 @@ body {
 canvas {
     background-color: #f0f0f0;
 }
+
+#angle-meter {
+    color: #f0f0f0;
+}
