@@ -29,7 +29,6 @@ class ball {
         ctxt.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
         ctxt.fillStyle = "black";
         ctxt.fill();
-        setTimeout(1000);
     }
 
     wallCollision() {
@@ -54,10 +53,6 @@ class ball {
             this.dx *= 0.8;
             this.dy *= 0.8;
         }
-    }
-
-    ballCollision() {
-
     }
 }
 
@@ -90,7 +85,6 @@ function render() {
         ball.move(); // moving first to init dx & dy
 
         ball.wallCollision();
-        ball.ballCollision();
 
         ball.draw();
     }); 

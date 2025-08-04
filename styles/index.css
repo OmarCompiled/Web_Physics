@@ -11,16 +11,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: rgb(54, 54, 54);
+    background-color: steelblue;
     height: 100vh;
     width: 100vw;
 }
 
 canvas {
     background-color: #f0f0f0;
+    width: 100%;
+    height: 100%;
     border: none;
-}
-
-#angle-meter {
-    color: #f0f0f0;
 }
