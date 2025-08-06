@@ -12,9 +12,10 @@ class ball {
         this.y = y;
         this.radius = 15; // arbitrary, could be changed
         this.c = 0.8 // damping coefficient
+        this.speed = 7;
         this.mass = this.radius;
-        this.dx = Math.cos(angle) * 7; // velocities
-        this.dy = Math.sin(angle) * 7;
+        this.dx = Math.cos(angle) * this.speed; // velocities
+        this.dy = Math.sin(angle) * this.speed;
     }
 
     // this function should be called inside render
