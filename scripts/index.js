@@ -1,3 +1,5 @@
+import Ticker from "./Ticker.js";
+
 const canvas = document.querySelector("canvas");
 const ctxt = canvas.getContext("2d");
 const angleMeter = document.getElementById("angle-meter");
@@ -5,6 +7,14 @@ const angleMeter = document.getElementById("angle-meter");
 let rad = -Math.PI / 3;
 let g   = 0.5;
 let balls = [];
+let mouseX, mouseY;
+
+// MACHINE GUN!!!
+const freq = 20; // shots per second
+let mouseDowntime;
+let isMouseDown = false;
+let mgunActive = false;
+const machineGunTicker = new Ticker({ freq }); // returns true freq times per second
 
 class ball {
     constructor(angle, x, y) {
@@ -70,18 +80,50 @@ class ball {
 // }
 // deprecated function
 
-canvas.addEventListener("click", (e)=> {
-    balls.push(new ball(rad, e.offsetX, e.offsetY));
+canvas.addEventListener("mousemove", (e) => {
+    if (isMouseDown) setMouse(e);
 });
+
+canvas.addEventListener("mousedown", async (e) => {
+    setMouse(e);
+    balls.push(new ball(rad, mouseX, mouseY));
+
+    mouseDowntime = performance.now();
+    isMouseDown = true;
+
+    await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1s. todo: make a utils folder with a custom timer function someday
+
+    if (isMouseDown) mgunActive = true; // yeahhhh
+
+});
+
+document.addEventListener("mouseup", () => {
+    isMouseDown = false;
+    mgunActive = false;
+});
+
+canvas.addEventListener("mouseleave", () => {
+    isMouseDown = false;
+    mgunActive = false;
+})
 
 document.addEventListener("wheel", () => {
     rad += 0.1;
 });
 
+function setMouse(e) {
+    mouseX = e.offsetX;
+    mouseY = e.offsetY;
+}
+
 function render() {
     requestAnimationFrame(render);
     // clearing; very important, otherwise it'll draw a line not a circle.
     ctxt.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (mgunActive && machineGunTicker.tick()) {
+        balls.push(new ball(rad, mouseX, mouseY));
+    }
 
     balls.forEach(ball => {
         ball.move(); // moving first to init dx & dy
@@ -90,7 +132,6 @@ function render() {
 
         ball.draw();
     }); 
-
 }
 
 render();
