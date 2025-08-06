@@ -11,6 +11,7 @@ class ball {
         this.x = x;
         this.y = y;
         this.radius = 15; // arbitrary, could be changed
+        this.c = 0.8 // damping coefficient
         this.mass = this.radius;
         this.dx = Math.cos(angle) * 7; // velocities
         this.dy = Math.sin(angle) * 7;
@@ -35,23 +36,23 @@ class ball {
         if(this.x + this.radius > canvas.width) {
             this.x = canvas.width - this.radius; // very important to prevent clipping
             this.dx *= -1; // inverting velocity vector direction
-            this.dx *= 0.8; // damping/friction
-            this.dy *= 0.8; // basically velocity decreases gradually
+            this.dx *= this.c; // damping/friction
+            this.dy *= this.c; // basically velocity decreases gradually
         } else if(this.x - this.radius < 0) {
             this.x = this.radius; // important to allow ball to stop and prevent clipping
             this.dx *= -1;
-            this.dx *= 0.8;
-            this.dy *= 0.8;
+            this.dx *= this.c;
+            this.dy *= this.c;
         } else if(this.y + this.radius > canvas.height) {
             this.y = canvas.height - this.radius;
             this.dy *= -1;
-            this.dx *= 0.8;
-            this.dy *= 0.8;
+            this.dx *= this.c;
+            this.dy *= this.c;
         } else if(this.y - this.radius < 0) {
             this.y = this.radius;
             this.dy *= -1;
-            this.dx *= 0.8;
-            this.dy *= 0.8;
+            this.dx *= this.c;
+            this.dy *= this.c;
         }
     }
 }
