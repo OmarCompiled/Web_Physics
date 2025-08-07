@@ -121,8 +121,9 @@ document.addEventListener("wheel", (e) => {
 });
 
 function setMouse(e) {
-    mouseX = e.offsetX;
-    mouseY = e.offsetY;
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
 }
 
 function render() {
