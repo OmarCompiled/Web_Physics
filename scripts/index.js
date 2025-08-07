@@ -110,8 +110,9 @@ canvas.addEventListener("mouseleave", () => {
     mgunActive = false;
 })
 
-document.addEventListener("wheel", () => {
-    rad += 0.1;
+document.addEventListener("wheel", (e) => {
+    const weight = e.deltaY > 0 ? 1 : -1;
+    rad += weight * 0.2;
 });
 
 function setMouse(e) {
