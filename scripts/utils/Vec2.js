@@ -11,6 +11,12 @@ export default class Vec2 {
     return this;
   }
 
+  sub(v) {
+    this.x -= v.x;
+    this.y -= v.y;
+    return this;
+  }
+
   // Multiply by a scalar
   scale(s) {
     this.x *= s;
