@@ -1,6 +1,6 @@
 import Ticker from "./utils/Ticker.js";
 import Vec2 from "./utils/Vec2.js";
-import { doOverlap } from "./utils/overlap.js";
+import { doOverlap, overlap } from "./utils/overlap.js";
 
 const canvas = document.querySelector("canvas");
 const ctxt = canvas.getContext("2d");
@@ -37,7 +37,7 @@ class ball {
         this.p = new Vec2(x, y); // position vector
         this.radius = 15; // arbitrary, could be changed
         this.c = 0.85 // damping coefficient
-        this.speed = 900;
+        this.speed = 1e3;
         this.mass = this.radius;
         this.v = (new Vec2(Math.cos(angle), Math.sin(angle))).scale(this.speed); // velocity vector
         this.a = new Vec2(0, g);
@@ -58,22 +58,33 @@ class ball {
     }
 
     wallCollision() {
-        if (this.p.x + this.radius > canvas.width) { // right
-            this.p.x = canvas.width - this.radius; // very important to prevent clipping
-            this.v.x *= -1; // inverting velocity vector direction
-        } else if (this.p.x - this.radius < 0) { // left
-            this.p.x = this.radius; // important to allow ball to stop and prevent clipping
+        // now checks corner collisions as well (horizontal + vertical walls simultaneously)
+        // a needed change thanks to ball collisions
+        const floor = canvas.height - this.radius;
+        const ceiling = this.radius;
+        const right = canvas.width - this.radius;
+        const left = this.radius;
+
+        // right and up
+        if (this.p.x > right) {
+            this.p.x = right;
             this.v.x *= -1;
-        } else if (this.p.y + this.radius > canvas.height) { // up
-            this.p.y = canvas.height - this.radius;
+        } else if (this.p.x < left) {
+            this.p.x = left;
+            this.v.x *= -1;
+        }
+
+        // down and up
+        if (this.p.y > floor) {
+            this.p.y = floor;
             this.v.y *= -1;
-        } else if (this.p.y - this.radius < 0) { // down
-            this.p.y = this.radius;
+        } else if (this.p.y < ceiling) {
+            this.p.y = ceiling;
             this.v.y *= -1;
         }
         else return;
 
-        this.v.scale(this.c); // damping/friction. basically velocity decreases gradually. applied in all listed cases.
+        this.v.scale(this.c);
     }
 }
 
@@ -119,23 +130,104 @@ function setMouse(e) {
 }
 
 function ballCollision() {
+    // Used for loops to skip unnecessary iterations. Trying to improve performance as much as possible.
     for (let i = 0; i < balls.length; i++) {
         for (let j = i + 1; j < balls.length; j++) {
             const ball1 = balls[i], ball2 = balls[j];
             if (doOverlap(ball1, ball2)) {
-                // The new velocity of each ball is in the direction of the line connecting their centers.
-                // The balls are propelled in opposite directions.
-                // Will implement actual physics soon.
-                // Summary: C2 - C1 gives us vector C1C2, it's normalized, then scaled by the magnitude.
-                const mag = 4;
-                const dir = Vec2.DirTo(ball1.p, ball2.p).scale(mag);
-                const offset = Vec2.Scale(dir, ball1.radius);
+                /*
+                    Core idea: the velocity is projected into two components: Vt; in the direction of the tangent to the collision,
+                    and Vn; in the direction of the normal to the collision. This is possible; since the tangent and normal are
+                    perpendicular to each other (obviously).
 
-                ball1.p.add(offset);
-                ball2.p.sub(offset);
+                    After the collision, the tangential component is NOT affected; only the normal one is. So that's what we calculate
+                    using the elastic collision formula.
 
-                ball1.v.set(dir);
-                ball2.v.set(Vec2.Scale(dir, -1));
+                    After we get the updated normal vector, since we already had the tangential component anyway, we just add them
+                    up to obtain the new resultant velocity.
+                */
+
+
+                /*
+                        1. Obtain the tangent and normal direction vectors.
+               
+                    Both are normalized directions; just unit vectors and NOT the full projections. Yet...
+                */
+
+                const normal = Vec2.Sub(ball2.p, ball1.p).normalized; // Connecting the centers of the balls.
+                const tangent = Vec2.Tangent(normal); // Collision tangent.
+
+                /*
+                        2. Resolve overlap
+
+                    Since we aren't dealing with actual solid objects, the balls unfortunately overlap.
+                    This function uses real life physics, which assume objects don't, well, overlap.
+                    To solve that issue, we just give each ball a push in opposite directions (along the normal)
+                    with equal distances (overlap / 2) which makes them perfectly tangential. Can be made clear 
+                    with a figure.
+                */
+
+                const offset = overlap(ball1, ball2) / 2;
+                const correction = Vec2.Scale(normal, offset);
+                ball1.p.sub(correction);
+                ball2.p.add(correction);
+
+                /*
+                        3. Calculating dot products for later use.
+                
+                      We need them for this formula: v_direction = (v . d) * d
+                      This formula caluclates the projection of vector v onto the unit vector/direction d.
+                      v is the vector we're decomposing, d is a unit vector in the direction we want,
+                      v . d is their dot product, and * scales the vector d.
+              */
+
+                const v1n = Vec2.Dot(normal, ball1.v);
+                const v1t = Vec2.Dot(tangent, ball1.v);
+
+                const v2n = Vec2.Dot(normal, ball2.v);
+                const v2t = Vec2.Dot(tangent, ball2.v);
+
+                /*
+                        4. Calculate the new scalar projections onto the normal based on the elastic formula deduced from
+                        the law of conservation of momentum.
+
+                    This assumes elastic collision with no loss in energy. (we add fake energy loss with damping later)
+
+                    The new tangential component is never computed because, again, it isn't even affected by the collision; 
+                    only the normal component is.
+                */
+
+                const m1 = ball1.mass;
+                const m2 = ball2.mass;
+
+                const v1nAfter = (v1n * (m1 - m2) + 2 * m2 * v2n) / (m1 + m2);
+                const v2nAfter = (v2n * (m2 - m1) + 2 * m1 * v1n) / (m1 + m2);
+
+                /*
+                        5. V = v_t + v_n
+
+                    resultant velocity vector after collision = unchanged tangential vector + changed normal vector
+                    Where, again, v_direction = (v . d) * d
+
+                    => v_t = vt * t
+                    tangent component = the dot product we got ages ago (like 10 lines ago) * unit tangent direction vector.
+                    we could've calculated this a while ago; because it never even changed.
+                    It's just here to group everything in a way that makes sense.
+
+                    => v_n = vn * t
+                    NEW normal component = the NEW scalar projection onto the normal * normal unit vector
+                    we can finally calculate this now; as it doesn't use the old scalar projection (aka dot product), but
+                    the ones from the elastic collision formula (that we've only just calculated).
+
+                    Add those two together, and you finally get V.
+                */
+
+                ball1.v.set(Vec2.Scale(tangent, v1t).add(Vec2.Scale(normal, v1nAfter)));
+                ball2.v.set(Vec2.Scale(tangent, v2t).add(Vec2.Scale(normal, v2nAfter)));
+
+                // Mimic energy loss with damping.
+                ball1.v.scale(ball1.c);
+                ball2.v.scale(ball2.c);
             }
         }
     }
@@ -149,7 +241,7 @@ function update(delta) {
     }
 
     balls.forEach(ball => ball.move(delta)); // moving first to init dx & dy
-    // ballCollision();
+    ballCollision();
     balls.forEach(ball => {
         ball.wallCollision();
         ball.draw();
@@ -162,7 +254,7 @@ function render(now) {
     // So when you come back, delta will be HUGE which will cause sudden movements like big jumps.
     // Capping it at 50ms means no physics frame will go longer than 50ms.
     // For reference, on 60fps, a frame takes 16.67ms.
-    let delta = (now - lastTime) / 1000; 
+    let delta = (now - lastTime) / 1000;
     delta = Math.min(0.05, delta);
     lastTime = now;
 
