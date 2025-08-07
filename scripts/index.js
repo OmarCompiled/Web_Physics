@@ -126,8 +126,8 @@ function ballCollision() {
                 const dir = Vec2.DirTo(ball1.p, ball2.p).scale(mag);
                 const offset = Vec2.Scale(dir, ball1.radius);
 
-                ball1.p.sub(offset);
-                ball2.p.add(offset);
+                ball1.p.add(offset);
+                ball2.p.sub(offset);
 
                 ball1.v.set(dir);
                 ball2.v.set(Vec2.Scale(dir, -1));
