@@ -16,7 +16,6 @@ let mouseX, mouseY;
 
 // MACHINE GUN!!!
 const freq = 20; // shots per second
-let mouseDowntime;
 let isMouseDown = false;
 let mgunActive = false;
 const machineGunTicker = new Ticker({ freq }); // returns true freq times per second
@@ -93,7 +92,6 @@ canvas.addEventListener("mousedown", async (e) => {
     setMouse(e);
     balls.push(new ball(rad, mouseX, mouseY));
 
-    mouseDowntime = performance.now();
     isMouseDown = true;
 
     await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1s. todo: make a utils folder with a custom timer function someday
