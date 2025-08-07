@@ -4,6 +4,31 @@ export default class Vec2 {
     this.y = y;
   }
 
+  // ---- STATIC ---- //
+
+  static Add(v1, v2) {
+    return new Vec2(v1.x + v2.x, v1.y + v2.y);
+  }
+
+  static Sub(v1, v2) {
+    return new Vec2(v1.x - v2.x, v1.y - v2.y);
+  }
+
+  static Scale(v, s) {
+    return new Vec2(v.x * s, v.y * s);
+  }
+
+  static DistTo(v1, v2) {
+    return Math.hypot(v1.x - v2.x, v1.y - v2.y);
+  }
+
+  // Returns the normalized direction vector v1v2.
+  static DirTo(v1, v2) {
+    return this.Sub(v2, v1).normalized;
+  }
+
+  // ---- MUTATING ---- //
+
   // Add two vec2s
   add(v) {
     this.x += v.x;
@@ -11,6 +36,7 @@ export default class Vec2 {
     return this;
   }
 
+  // Subtract two vec2s
   sub(v) {
     this.x -= v.x;
     this.y -= v.y;
@@ -45,12 +71,12 @@ export default class Vec2 {
   get angle() {
     return Math.atan2(this.y, this.x);
   }
-  
+
   // Get the magnitude of the vector
   get length() {
     return Math.hypot(this.x, this.y);
   }
-  
+
   // Make a copy of the vector
   clone() {
     return new Vec2(this.x, this.y);
