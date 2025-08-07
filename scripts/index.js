@@ -16,9 +16,9 @@ let mouseX, mouseY;
 
 // MACHINE GUN!!!
 const freq = 20; // shots per second
-let mouseDowntime;
 let isMouseDown = false;
 let mgunActive = false;
+let mgunTimer;
 const machineGunTicker = new Ticker({ freq }); // returns true freq times per second
 
 class ball {
@@ -89,36 +89,41 @@ canvas.addEventListener("mousemove", (e) => {
     if (isMouseDown) setMouse(e);
 });
 
-canvas.addEventListener("mousedown", async (e) => {
+canvas.addEventListener("mousedown", (e) => {
     setMouse(e);
     balls.push(new ball(rad, mouseX, mouseY));
 
-    mouseDowntime = performance.now();
     isMouseDown = true;
 
-    await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1s. todo: make a utils folder with a custom timer function someday
-
-    if (isMouseDown) mgunActive = true; // yeahhhh
-
+    // wait 1s. if still holding the mouse down, fire.
+    mgunTimer = setTimeout(() => {
+        mgunActive = isMouseDown;
+     }, 1000); 
 });
 
 document.addEventListener("mouseup", () => {
-    isMouseDown = false;
-    mgunActive = false;
+    resetMgun();
 });
 
 canvas.addEventListener("mouseleave", () => {
-    isMouseDown = false;
-    mgunActive = false;
+    resetMgun();
 })
 
-document.addEventListener("wheel", () => {
-    rad += 0.1;
+function resetMgun() {
+    isMouseDown = false;
+    mgunActive = false;
+    clearTimeout(mgunTimer);
+}
+
+document.addEventListener("wheel", (e) => {
+    const weight = e.deltaY > 0 ? 1 : -1;
+    rad += weight * 0.2;
 });
 
 function setMouse(e) {
-    mouseX = e.offsetX;
-    mouseY = e.offsetY;
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
 }
 
 function render() {
