@@ -1,9 +1,14 @@
 const canvas = document.querySelector("canvas");
 const ctxt = canvas.getContext("2d");
-const angleMeter = document.getElementById("angle-meter");
+// const angleMeter = document.getElementById("angle-meter"); // redacted
+
+const gButton = document.querySelector("#g-button");
+gButton.onclick = () => {
+    g === 0 ? g = 0.5 : g = 0;
+};
 
 let rad = -Math.PI / 3;
-let g   = 0.5;
+let g   = 0;
 let balls = [];
 
 class ball {
