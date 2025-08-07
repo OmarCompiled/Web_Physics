@@ -16,7 +16,7 @@ cButton.onclick = () => {
 }
 
 let rad = -Math.PI / 3;
-let g   = 0;
+let g = 0;
 let balls = [];
 let mouseX, mouseY;
 
@@ -55,22 +55,22 @@ class ball {
     }
 
     wallCollision() {
-        if(this.x + this.radius > canvas.width) {
+        if (this.x + this.radius > canvas.width) {
             this.x = canvas.width - this.radius; // very important to prevent clipping
             this.dx *= -1; // inverting velocity vector direction
             this.dx *= this.c; // damping/friction
             this.dy *= this.c; // basically velocity decreases gradually
-        } else if(this.x - this.radius < 0) {
+        } else if (this.x - this.radius < 0) {
             this.x = this.radius; // important to allow ball to stop and prevent clipping
             this.dx *= -1;
             this.dx *= this.c;
             this.dy *= this.c;
-        } else if(this.y + this.radius > canvas.height) {
+        } else if (this.y + this.radius > canvas.height) {
             this.y = canvas.height - this.radius;
             this.dy *= -1;
             this.dx *= this.c;
             this.dy *= this.c;
-        } else if(this.y - this.radius < 0) {
+        } else if (this.y - this.radius < 0) {
             this.y = this.radius;
             this.dy *= -1;
             this.dx *= this.c;
@@ -104,7 +104,7 @@ canvas.addEventListener("mousedown", (e) => {
     // wait 1s. if still holding the mouse down, fire.
     mgunTimer = setTimeout(() => {
         mgunActive = isMouseDown;
-     }, 1000); 
+    }, 1000);
 });
 
 document.addEventListener("mouseup", () => {
@@ -147,7 +147,7 @@ function render() {
         ball.wallCollision();
 
         ball.draw();
-    }); 
+    });
 }
 
 render();
