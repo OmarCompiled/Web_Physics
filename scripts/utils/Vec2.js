@@ -18,13 +18,24 @@ export default class Vec2 {
     return new Vec2(v.x * s, v.y * s);
   }
 
+  // Returns the distance between two vectors
   static DistTo(v1, v2) {
     return Math.hypot(v1.x - v2.x, v1.y - v2.y);
   }
 
-  // Returns the normalized direction vector v1v2.
+  // Returns the normalized direction vector v1v2
   static DirTo(v1, v2) {
     return this.Sub(v2, v1).normalized;
+  }
+
+  // Returns a clockwise or counterclockwise tangential vector
+  static Tangent(v, ccw = true) {
+    return ccw ? new Vec2(-v.y, v.x) : new Vec2(v.y, -v.x);
+  }
+
+  // Returns the dot product of two vectors
+  static Dot(v1, v2) {
+    return v1.x * v2.x + v1.y * v2.y;
   }
 
   // ---- MUTATING ---- //
