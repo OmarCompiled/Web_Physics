@@ -5,9 +5,15 @@ const ctxt = canvas.getContext("2d");
 // const angleMeter = document.getElementById("angle-meter"); // redacted
 
 const gButton = document.querySelector("#g-button");
+const cButton = document.querySelector("#c-button");
+
 gButton.onclick = () => {
     g === 0 ? g = 0.5 : g = 0;
 };
+
+cButton.onclick = () => {
+    balls = [];
+}
 
 let rad = -Math.PI / 3;
 let g   = 0;
