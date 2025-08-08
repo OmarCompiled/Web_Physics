@@ -38,6 +38,11 @@ export default class Vec2 {
     return v1.x * v2.x + v1.y * v2.y;
   }
 
+  // Returns a zero vector
+  static get Z() {
+    return new Vec2();
+  }
+
   // ---- MUTATING ---- //
 
   // Add two vec2s
