@@ -7,6 +7,7 @@ const ctxt = canvas.getContext("2d");
 
 const gButton = document.querySelector("#g-button");
 const cButton = document.querySelector("#c-button");
+const edgeButton = document.querySelector("#edge-button");
 
 gButton.onclick = () => {
     g === 0 ? g = G : g = 0;
@@ -17,17 +18,24 @@ cButton.onclick = () => {
     balls = [];
 }
 
+edgeButton.onclick = () => {
+    mode == "edge" ? mode = "ball" : mode = "edge";
+    edgeButton.value = mode;
+};
+
 let rad = -Math.PI / 3;
-const G = 2e4; // gravitational constant
+let mode = "edge";
+const G = 0.5e4; // gravitational constant
 let g = G; // actual gravity value being used
 let balls = [];
+let edges = [];
 let mouseX, mouseY;
 
 // MACHINE GUN!!!
-const freq = 20; // shots per second
+const freq = 5; // shots per second
 let isMouseDown = false;
 let mgunActive = false;
-let mgunTimer;
+let mgunTimer;  
 const machineGunTicker = new Ticker({ freq }); // returns true freq times per second
 
 let lastTime = 0;
@@ -88,6 +96,23 @@ class ball {
     }
 }
 
+// couldn't seperate into new file since we need ctxt and canvas :/
+class edge { // this inheritence is just for testing, since I'm having trouble
+    // with the rendering :)
+    constructor(v1, v2) {
+        this.startV = v1; // starting point and ending point vectors
+        this.endV = v2;
+    }
+    draw() {
+        ctxt.strokeStyle = "black";
+        ctxt.lineWidth = 10;
+        ctxt.beginPath();
+        ctxt.moveTo(this.startV.x, this.startV.y);
+        ctxt.lineTo(this.endV.x, this.endV.y);
+        ctxt.stroke();
+    }
+}
+
 canvas.addEventListener("mousemove", (e) => {
     if (isMouseDown) setMouse(e);
 });
@@ -127,6 +152,29 @@ function setMouse(e) {
     const rect = canvas.getBoundingClientRect();
     mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
     mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+}
+
+function edgeCollision() {
+    for(let i = 0; i < balls.length; i++) {
+        for(let j = 0; j < edges.length; j++) {
+            const currBall = balls[i], currEdge = edges[j];
+            let edgeDir = Vec2.Sub(currEdge.endV, currEdge.startV);
+            let AC = Vec2.Sub(currBall.p, currEdge.startV);
+            let t = Vec2.Dot(edgeDir, AC) / (Vec2.Dot(edgeDir, edgeDir)); // closest point to edge
+            t > 1 ? t = 1 : t = t;
+            t < 0 ? t = 0 : t = t; // have to clamp t or the collision extends infinitely
+            // review rays and parmeterized rays (basically r(t) = S + t*d)
+            let P = Vec2.Add(currEdge.startV, (Vec2.Scale(edgeDir, t)));
+            let distance = Vec2.DistTo(currBall.p, P);
+            if(distance <= 2 * currBall.radius) {   
+                // I'll have to use the reflection formula
+                let normal = new Vec2(-edgeDir.y, edgeDir.x);
+                let n = normal.normalized;
+                let reflectedV = Vec2.Sub(currBall.v, Vec2.Scale(n, 2*Vec2.Dot(currBall.v, n)));
+                currBall.v = reflectedV;
+            }
+        }
+    }
 }
 
 function ballCollision() {
@@ -240,14 +288,20 @@ function update(delta) {
         balls.push(new ball(rad, mouseX, mouseY));
     }
 
+    edges.forEach(edge => edge.draw());
+
     balls.forEach(ball => ball.move(delta)); // moving first to init dx & dy
     ballCollision();
+    edgeCollision();
     balls.forEach(ball => {
         ball.wallCollision();
         ball.draw();
     });
 }
 
+let testEdge1 = new edge(new Vec2(100, 100), new Vec2(100, 600));
+let testEdge2 = new edge(new Vec2(500, 500), new Vec2(1000, 1000));
+edges.push(testEdge1, testEdge2);
 function render(now) {
     // Delta (seconds since the last frame) is capped at 50ms.
     // If you switch between tabs while the site is running, render doesn't run at all; yet time keeps running.
