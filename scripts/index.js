@@ -99,11 +99,13 @@ class ball {
 // couldn't seperate into new file since we need ctxt and canvas :/
 class edge { // this inheritence is just for testing, since I'm having trouble
     // with the rendering :)
-    startV; // starting point and ending point vectors
-    endV;
-
+    constructor(v1, v2) {
+        this.startV = v1; // starting point and ending point vectors
+        this.endV = v2;
+    }
     draw() {
         ctxt.strokeStyle = "black";
+        ctxt.lineWidth = 10;
         ctxt.beginPath();
         ctxt.moveTo(this.startV.x, this.startV.y);
         ctxt.lineTo(this.endV.x, this.endV.y);
@@ -164,7 +166,7 @@ function edgeCollision() {
             // review rays and parmeterized rays (basically r(t) = S + t*d)
             let P = Vec2.Add(currEdge.startV, (Vec2.Scale(edgeDir, t)));
             let distance = Vec2.DistTo(currBall.p, P);
-            if(distance <= currBall.radius) {   
+            if(distance <= 2 * currBall.radius) {   
                 // I'll have to use the reflection formula
                 let normal = new Vec2(-edgeDir.y, edgeDir.x);
                 let n = normal.normalized;
@@ -297,10 +299,9 @@ function update(delta) {
     });
 }
 
-let testEdge = new edge();
-testEdge.startV = new Vec2(100, 100);
-testEdge.endV = new Vec2(600, 600);
-edges.push(testEdge);
+let testEdge1 = new edge(new Vec2(100, 100), new Vec2(100, 600));
+let testEdge2 = new edge(new Vec2(500, 500), new Vec2(1000, 1000));
+edges.push(testEdge1, testEdge2);
 function render(now) {
     // Delta (seconds since the last frame) is capped at 50ms.
     // If you switch between tabs while the site is running, render doesn't run at all; yet time keeps running.
