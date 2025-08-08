@@ -76,7 +76,7 @@ export default class Vec2 {
   // Get the normalized vector
   get normalized() {
     const len = this.length;
-    if (len === 0) return new Vec2(1, 0);
+    if (len === 0) return new Vec2(0, 0);
     return this.clone().scale(1 / len);
   }
 
