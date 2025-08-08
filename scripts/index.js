@@ -166,7 +166,7 @@ function edgeCollision() {
             // review rays and parmeterized rays (basically r(t) = S + t*d)
             let P = Vec2.Add(currEdge.startV, (Vec2.Scale(edgeDir, t)));
             let distance = Vec2.DistTo(currBall.p, P);
-            if(distance <= 2 * currBall.radius) {   
+            if(distance - 10 <= currBall.radius) {   
                 // I'll have to use the reflection formula
                 let normal = new Vec2(-edgeDir.y, edgeDir.x);
                 let n = normal.normalized;
