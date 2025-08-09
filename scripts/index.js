@@ -1,17 +1,44 @@
 import Ticker from "./utils/Ticker.js";
 import Vec2 from "./utils/Vec2.js";
 import { doOverlap, overlap } from "./utils/overlap.js";
+import { GravityModeDown, GravityModeZero, GravityModeTable } from "./utils/GravityModes.js";
 
 const canvas = document.querySelector("canvas");
 const ctxt = canvas.getContext("2d");
 
 const gButton = document.querySelector("#g-button");
+const gModeText = gButton.querySelector("#gMode");
 const cButton = document.querySelector("#c-button");
 const edgeButton = document.querySelector("#edge-button");
 
+const minRadius = 15;
+const maxRadius = 25;
+
+let rad = -Math.PI / 3;
+let mode = "edge";
+
+let balls = [];
+let edges = [];
+let mouseX, mouseY;
+
+// Gravity
+const gravityModes = [
+    new GravityModeDown(),
+    new GravityModeZero(),
+    new GravityModeTable(),
+];
+
+let currentGravityIdx = 0;
+let currentGravity = gravityModes[currentGravityIdx]
+
 gButton.onclick = () => {
-    g === 0 ? g = G : g = 0;
-    balls.forEach(ball => ball.a.y = g);
+    currentGravityIdx = (currentGravityIdx + 1) % gravityModes.length;
+    currentGravity = gravityModes[currentGravityIdx];
+    gModeText.textContent = currentGravity.constructor.name.replace("GravityMode", "");
+
+    balls.forEach(ball => {
+        ball.gravity = currentGravity;
+    });
 };
 
 cButton.onclick = () => {
@@ -23,38 +50,42 @@ edgeButton.onclick = () => {
     edgeButton.value = mode;
 };
 
-let rad = -Math.PI / 3;
-let mode = "edge";
-const G = 0.5e4; // gravitational constant
-let g = G; // actual gravity value being used
-let balls = [];
-let edges = [];
-let mouseX, mouseY;
-
 // MACHINE GUN!!!
 const freq = 5; // shots per second
 let isMouseDown = false;
 let mgunActive = false;
-let mgunTimer;  
+let mgunTimer;
 const machineGunTicker = new Ticker({ freq }); // returns true freq times per second
 
 let lastTime = 0;
 
-class ball {
-    constructor(angle, x, y) {
+class Ball {
+    static velocityThreshold = 15;
+    static accelerationThreshold = 1e-3;
+
+    constructor(angle, x, y, gravityMode = currentGravity) {
+        this.gravityMode = gravityMode;
         this.p = new Vec2(x, y); // position vector
-        this.radius = 15; // arbitrary, could be changed
-        this.c = 0.85 // damping coefficient
-        this.speed = 1e3;
-        this.mass = this.radius;
+        this.radius = Math.random() * (maxRadius - minRadius) + minRadius; // arbitrary, could be changed
+        this.c = this.gravityMode.c; // damping coefficient
+        this.mu = 0.2; // kintetic friction coefficient 
+        this.speed = 1.5e3;
+        this.mass = this.radius * this.radius; // mass is proportional to radius squared
         this.v = (new Vec2(Math.cos(angle), Math.sin(angle))).scale(this.speed); // velocity vector
-        this.a = new Vec2(0, g);
+        this.a = Vec2.Z;
+        this.setAcceleration();
+        this.isResting = false;
     }
 
     // this function should be called inside render
     move(delta) {
+        if (this.isResting) return; // no movement if resting
+
+        this.setAcceleration(); // based on the gravity mode
         this.v.add(Vec2.Scale(this.a, delta)); // v += a * dt
         this.p.add(Vec2.Scale(this.v, delta)); // p += v * dt
+
+        if (this.shouldRest()) this.rest();
     }
 
     // called in render as well
@@ -73,11 +104,12 @@ class ball {
         const right = canvas.width - this.radius;
         const left = this.radius;
 
-        // right and up
+        // right and left
         if (this.p.x > right) {
             this.p.x = right;
             this.v.x *= -1;
-        } else if (this.p.x < left) {
+        }
+        else if (this.p.x < left) {
             this.p.x = left;
             this.v.x *= -1;
         }
@@ -86,13 +118,53 @@ class ball {
         if (this.p.y > floor) {
             this.p.y = floor;
             this.v.y *= -1;
-        } else if (this.p.y < ceiling) {
+        }
+
+        else if (this.p.y < ceiling) {
             this.p.y = ceiling;
             this.v.y *= -1;
         }
+
         else return;
 
         this.v.scale(this.c);
+    }
+
+    shouldRest() {
+        // Rest if you're in GravityModeDown, on the ground, and not moving.
+        if (this.gravityMode instanceof GravityModeDown) {
+            return this.onGround();
+        }
+
+        // For any other mode (not zero gravity), just use the velocity threshold.
+        return !(this.gravityMode instanceof GravityModeZero) &&
+            this.v.length < Ball.velocityThreshold;
+
+        // GravityModeZero balls don't really need to rest.
+    }
+
+    rest() {
+        this.v.set(Vec2.Z)
+        this.isResting = true;
+    }
+
+    wakeUp() {
+        this.isResting = false;
+    }
+
+    set gravity(gravityMode) {
+        this.isResting = false;
+        this.gravityMode = gravityMode;
+        this.gravityMode.init(this);
+    }
+
+    onGround() {
+        const floor = canvas.height - this.radius;
+        return Math.abs(this.p.y - floor) < 0.5 && this.v.length < Ball.velocityThreshold;
+    }
+
+    setAcceleration() {
+        this.a.set(this.gravityMode.getAcceleration(this));
     }
 }
 
@@ -119,7 +191,7 @@ canvas.addEventListener("mousemove", (e) => {
 
 canvas.addEventListener("mousedown", (e) => {
     setMouse(e); // In case the mouse never moved before clicking
-    balls.push(new ball(rad, mouseX, mouseY)); // Initial shot
+    balls.push(new Ball(rad, mouseX, mouseY)); // Initial shot
 
     isMouseDown = true;
 
@@ -155,8 +227,8 @@ function setMouse(e) {
 }
 
 function edgeCollision() {
-    for(let i = 0; i < balls.length; i++) {
-        for(let j = 0; j < edges.length; j++) {
+    for (let i = 0; i < balls.length; i++) {
+        for (let j = 0; j < edges.length; j++) {
             const currBall = balls[i], currEdge = edges[j];
             let edgeDir = Vec2.Sub(currEdge.endV, currEdge.startV);
             let AC = Vec2.Sub(currBall.p, currEdge.startV);
@@ -170,7 +242,7 @@ function edgeCollision() {
                 // I'll have to use the reflection formula
                 let normal = new Vec2(-edgeDir.y, edgeDir.x);
                 let n = normal.normalized;
-                let reflectedV = Vec2.Sub(currBall.v, Vec2.Scale(n, 2*Vec2.Dot(currBall.v, n)));
+                let reflectedV = Vec2.Sub(currBall.v, Vec2.Scale(n, 2 * Vec2.Dot(currBall.v, n)));
                 currBall.v = reflectedV;
             }
         }
@@ -273,19 +345,28 @@ function ballCollision() {
                 ball1.v.set(Vec2.Scale(tangent, v1t).add(Vec2.Scale(normal, v1nAfter)));
                 ball2.v.set(Vec2.Scale(tangent, v2t).add(Vec2.Scale(normal, v2nAfter)));
 
-                // Mimic energy loss with damping.
-                ball1.v.scale(ball1.c);
-                ball2.v.scale(ball2.c);
+                // Wake up balls in case they're resting
+                ball1.wakeUp();
+                ball2.wakeUp();
             }
         }
     }
 }
 
-// Game logic
+// Runs once before the initial render
+function init() {
+    let testEdge1 = new edge(new Vec2(100, 100), new Vec2(100, 600));
+    let testEdge2 = new edge(new Vec2(500, 500), new Vec2(1000, 1000));
+    edges.push(testEdge1, testEdge2);
+
+    gModeText.textContent = currentGravity.constructor.name.replace("GravityMode", "");
+}
+
+// Game loop
 function update(delta) {
     // If the user is currently shooting and the current tick/frame is a shooting one, shoot.
     if (mgunActive && machineGunTicker.tick()) {
-        balls.push(new ball(rad, mouseX, mouseY));
+        balls.push(new Ball(rad, mouseX, mouseY));
     }
 
     edges.forEach(edge => edge.draw());
@@ -299,9 +380,6 @@ function update(delta) {
     });
 }
 
-let testEdge1 = new edge(new Vec2(100, 100), new Vec2(100, 600));
-let testEdge2 = new edge(new Vec2(500, 500), new Vec2(1000, 1000));
-edges.push(testEdge1, testEdge2);
 function render(now) {
     // Delta (seconds since the last frame) is capped at 50ms.
     // If you switch between tabs while the site is running, render doesn't run at all; yet time keeps running.
@@ -320,4 +398,5 @@ function render(now) {
     requestAnimationFrame(render);
 }
 
+init();
 render();
