@@ -389,7 +389,7 @@ function update(delta) {
     });
 }
 
-function render(now) {
+function render(now = performance.now()) {
     // Delta (seconds since the last frame) is capped at 50ms.
     // If you switch between tabs while the site is running, render doesn't run at all; yet time keeps running.
     // So when you come back, delta will be HUGE which will cause sudden movements like big jumps.
