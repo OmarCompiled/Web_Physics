@@ -168,7 +168,7 @@ function edgeCollision() {
             let distance = Vec2.DistTo(currBall.p, P);
             if(distance <= currBall.radius) {   
                 // I'll have to use the reflection formula
-                let normal = new Vec2(edgeDir.y, -edgeDir.x);
+                let normal = new Vec2(-edgeDir.y, edgeDir.x);
                 let n = normal.normalized;
                 // Basically calculating how much the ball intersects the edge
                 // and update it's position by adding the scaled normalized normal to currBall.p
