@@ -177,7 +177,7 @@ class edge { // this inheritence is just for testing, since I'm having trouble
     }
     draw() {
         ctxt.strokeStyle = "black";
-        ctxt.lineWidth = 10;
+        ctxt.lineWidth = 2;
         ctxt.beginPath();
         ctxt.moveTo(this.startV.x, this.startV.y);
         ctxt.lineTo(this.endV.x, this.endV.y);
@@ -240,8 +240,12 @@ function edgeCollision() {
             let distance = Vec2.DistTo(currBall.p, P);
             if(distance <= currBall.radius) {   
                 // I'll have to use the reflection formula
+                let toBall = Vec2.Sub(currBall.p, P); //getting vector from edge to ball(in balls dir) 
                 let normal = new Vec2(-edgeDir.y, edgeDir.x);
                 let n = normal.normalized;
+                if(Vec2.Dot(toBall, n) < 0) { // making sure that both sides of the edge are resolved
+                    n = Vec2.Scale(n, -1);
+                }
                 // Basically calculating how much the ball intersects the edge
                 // and update it's position by adding the scaled normalized normal to currBall.p
                 let penetrationLength = currBall.radius - distance;
