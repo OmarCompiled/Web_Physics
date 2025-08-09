@@ -38,6 +38,11 @@ export default class Vec2 {
     return v1.x * v2.x + v1.y * v2.y;
   }
 
+  // Returns a zero vector
+  static get Z() {
+    return new Vec2();
+  }
+
   // ---- MUTATING ---- //
 
   // Add two vec2s
@@ -76,7 +81,7 @@ export default class Vec2 {
   // Get the normalized vector
   get normalized() {
     const len = this.length;
-    if (len === 0) return new Vec2(1, 0);
+    if (len === 0) return new Vec2(0, 0);
     return this.clone().scale(1 / len);
   }
 
