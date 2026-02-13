@@ -9,7 +9,6 @@ const ctxt = canvas.getContext("2d");
 const gButton = document.querySelector("#g-button");
 const gModeText = gButton.querySelector("#gMode");
 const cButton = document.querySelector("#c-button");
-const edgeButton = document.querySelector("#edge-button");
 
 const minRadius = 15;
 const maxRadius = 25;
@@ -44,11 +43,6 @@ gButton.onclick = () => {
 cButton.onclick = () => {
     balls = [];
 }
-
-edgeButton.onclick = () => {
-    mode == "edge" ? mode = "ball" : mode = "edge";
-    edgeButton.value = mode;
-};
 
 // MACHINE GUN!!!
 const freq = 5; // shots per second
