@@ -10,11 +10,12 @@ const gButton = document.querySelector("#g-button");
 const gModeText = gButton.querySelector("#gMode");
 const cButton = document.querySelector("#c-button");
 
+const angleLabel = document.querySelector("#angle");
+
 const minRadius = 15;
 const maxRadius = 25;
 
 let rad = -Math.PI / 3;
-let mode = "edge";
 
 let balls = [];
 let edges = [];
@@ -367,6 +368,9 @@ function init() {
 
 // Game loop
 function update(delta) {
+    if(rad > 2*Math.PI) rad = 0;
+    if(rad < 0) rad = 2*Math.PI;
+    angleLabel.innerHTML = "angle: " + (rad * 180 / Math.PI).toFixed(2);
     // If the user is currently shooting and the current tick/frame is a shooting one, shoot.
     if (mgunActive && machineGunTicker.tick()) {
         balls.push(new Ball(rad, mouseX, mouseY));
